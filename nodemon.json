@@ -1,0 +1,5 @@
+{
+  "watch": ["src", "locales"],
+  "ext": "ts",
+  "exec": "pnpm run build && node dist/index.js"
+}

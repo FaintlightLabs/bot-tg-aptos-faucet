@@ -1,0 +1,35 @@
+{
+  "name": "tg-bot-faucet-aptos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm tsc",
+    "prestart": "pnpm run build",
+    "start": "nodemon dist/index.js",
+    "dev": "nodemon"
+  },
+  "files": [
+    "dist",
+    "locales",
+    "package.json",
+    "tsconfig.json"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.33.1",
+    "@grammyjs/conversations": "^1.2.0",
+    "@grammyjs/i18n": "^1.1.2",
+    "dotenv": "^16.4.7",
+    "grammy": "^1.34.0",
+    "koa": "^2.15.3",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.15.0",
+    "nodemon": "^3.1.9"
+  }
+}
