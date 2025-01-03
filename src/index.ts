@@ -1,5 +1,5 @@
 import { Bot, Context, session, SessionFlavor, webhookCallback } from 'grammy';
-import Koa from 'koa';
+import Koa from 'Koa';
 import "dotenv/config";
 import { Account, AccountAddress, Aptos, APTOS_COIN, AptosConfig, Ed25519PrivateKey, Network, UserTransactionResponse } from '@aptos-labs/ts-sdk';
 import { I18n, I18nFlavor } from '@grammyjs/i18n';
@@ -119,14 +119,17 @@ bot.command("language", async (ctx) => {
 if(use_webhook) {
     const app = new Koa();
     app.use(webhookCallback(bot, 'koa'));
-    await bot.api.setWebhook(process.env.WEBHOOK_URL!);
-    app.listen(3000); 
+    app.listen(8000);
+    await bot.api.setWebhook( process.env.WEBHOOK_URL! );
+    
 }else{
-    await bot.api.setMyCommands([
-        { command: "start", description: "Start the bot" },
-        { command: "help", description: "Show help text" },
-        { command: "faucet", description: "Get 0.1 testnet APT token" },
-        { command: "language", description: "Set language" },
-    ]);
     await bot.start();
 }
+
+await bot.api.setMyCommands([
+    { command: "start", description: "Start the bot" },
+    { command: "help", description: "Show help text" },
+    { command: "faucet", description: "Get 0.1 testnet APT token" },
+    { command: "language", description: "Set language" },
+]);
+ 
