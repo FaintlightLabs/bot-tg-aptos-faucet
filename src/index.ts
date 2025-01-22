@@ -1,5 +1,5 @@
 import { Bot, Context, InlineKeyboard, session, SessionFlavor, webhookCallback } from 'grammy';
-import Koa from 'Koa';
+import Koa from 'koa';
 import "dotenv/config";
 import { Account, AccountAddress, Aptos, APTOS_COIN, AptosConfig, Ed25519PrivateKey, Network, UserTransactionResponse } from '@aptos-labs/ts-sdk';
 import { I18n, I18nFlavor } from '@grammyjs/i18n';
@@ -58,7 +58,8 @@ bot.command('help', async ctx => {
 bot.command('faucet', async ctx => {
 
     let is_thread = ctx.message?.is_topic_message;
-    
+    let is_private = ctx.chat?.type === 'private';
+
     // 判断上一次这个用户调用的时间是否超过 1 小时
     const lastCall = db[ctx.from!.id];
     if (lastCall && new Date().getTime() - lastCall.lastCall.getTime() < 3600000) {
@@ -125,7 +126,7 @@ bot.command('faucet', async ctx => {
         `delete_${ctx.from?.id}`
     );
 
-    await ctx.reply(`Transaction submitted!\n\nYou get 0.1 APT in testnet\n\nTxn Hash: ${submit_result.hash}\n\nExplorer: https://explorer.aptoslabs.com/txn/${submit_result.hash}?network=testnet`, { reply_markup: keyboard, message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
+    await ctx.reply(`Transaction submitted!\n\nYou get 0.1 APT in testnet\n\nTxn Hash: ${submit_result.hash}\n\nExplorer: https://explorer.aptoslabs.com/txn/${submit_result.hash}?network=testnet`, { reply_markup: is_private ? undefined : keyboard, message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
     await bot.api.setMessageReaction( ctx.chat!.id, ctx.message!.message_id , [{type: "emoji", emoji:'👌'}],);
 });
 bot.command("language", async (ctx) => {
