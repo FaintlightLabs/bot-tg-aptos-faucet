@@ -1,4 +1,4 @@
-import { Bot, Context, session, SessionFlavor, webhookCallback } from 'grammy';
+import { Bot, Context, InlineKeyboard, session, SessionFlavor, webhookCallback } from 'grammy';
 import Koa from 'Koa';
 import "dotenv/config";
 import { Account, AccountAddress, Aptos, APTOS_COIN, AptosConfig, Ed25519PrivateKey, Network, UserTransactionResponse } from '@aptos-labs/ts-sdk';
@@ -38,15 +38,36 @@ bot.use(
 );
 bot.use(i18n);
 // 介绍大家我这是一个 Aptos Testnet 水龙头机器人
-bot.command('start', ctx => ctx.reply( ctx.t("start") ));
+bot.command('start', ctx => { 
+    if(ctx.chat?.type != 'private') {
+        return 
+    }
+    return ctx.reply( ctx.t("start"))
+});
 // 输入 /faucet <address> 可以获得 0.1 个 testnet token 每个小时只能调用一次
-bot.command('help', ctx => ctx.reply(ctx.t("help")));
+bot.command('help', async ctx => {
+    let is_private = ctx.chat?.type === 'private';
+    if(is_private) {
+        return await ctx.reply(ctx.t("help"));
+    }else{
+        let message = await ctx.reply(ctx.t("help"), {message_thread_id: ctx.message?.message_thread_id});
+        return deleteMessage(message.chat.id, message.message_id);
+    }
+
+});
 bot.command('faucet', async ctx => {
+
+    let is_thread = ctx.message?.is_topic_message;
+    
     // 判断上一次这个用户调用的时间是否超过 1 小时
     const lastCall = db[ctx.from!.id];
     if (lastCall && new Date().getTime() - lastCall.lastCall.getTime() < 3600000) {
-        return ctx.reply(ctx.t("faucet.too-frequent"));
+        let message = await ctx.reply(ctx.t("faucet.too-frequent"),{message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
+        deleteMessage(message.chat.id, message.message_id);
+        return 
     };
+
+
 
     // 调用 Aptos SDK 发送 0.1 个 testnet token
 
@@ -55,7 +76,9 @@ bot.command('faucet', async ctx => {
     let address = ctx.match.split(' ').at(0);
 
     if(!address) {
-        return await ctx.reply(ctx.t("faucet.no-address"));
+        let message = await ctx.reply(ctx.t("faucet.no-address"));
+        deleteMessage(message.chat.id, message.message_id);
+        return 
     }
 
     let txn = await aptos.transferCoinTransaction({
@@ -76,7 +99,9 @@ bot.command('faucet', async ctx => {
     }
 
     if(simulate_result![0].vm_status !== 'Executed successfully') {
-        return await ctx.reply(`Transaction simulation failed!\n${simulate_result![0].vm_status}`);
+        let message = await ctx.reply(`Transaction simulation failed!\n${simulate_result![0].vm_status}`,{message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
+        deleteMessage(message.chat.id, message.message_id);
+        return  
     }
 
     let faucetAccountAuth = aptos.transaction.sign({
@@ -94,9 +119,19 @@ bot.command('faucet', async ctx => {
     // 更新用户调用时间
     db[ctx.from!.id] = { lastCall: new Date() };
 
-    await ctx.reply(`Transaction submitted!\n\nYou get 0.1 APT in testnet\n\nTxn Hash: ${submit_result.hash}\n\nExplorer: https://explorer.aptoslabs.com/txn/${submit_result.hash}?network=testnet`);
+    // 制作一个按钮，可以由某个人删除信息
+    const keyboard = new InlineKeyboard().text(
+        `Delete this message`,
+        `delete_${ctx.from?.id}`
+    );
+
+    await ctx.reply(`Transaction submitted!\n\nYou get 0.1 APT in testnet\n\nTxn Hash: ${submit_result.hash}\n\nExplorer: https://explorer.aptoslabs.com/txn/${submit_result.hash}?network=testnet`, { reply_markup: keyboard, message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
+    await bot.api.setMessageReaction( ctx.chat!.id, ctx.message!.message_id , [{type: "emoji", emoji:'👌'}],);
 });
 bot.command("language", async (ctx) => {
+    if(ctx.chat?.type != 'private') {
+        return 
+    }
     if (ctx.match === "") {
       return await ctx.reply(ctx.t("language.specify-a-locale", {locales: i18n.locales.join(", ")}));
     }
@@ -114,6 +149,19 @@ bot.command("language", async (ctx) => {
     await ctx.i18n.setLocale(ctx.match);
     await ctx.reply(ctx.t("language.language-set", {locale: ctx.match}));
   });
+bot.callbackQuery(/^delete_/, async (ctx) => {
+    if (!ctx.callbackQuery?.data) return;
+    let [id] = ctx.callbackQuery.data.split('_').splice(1); 
+    await ctx.answerCallbackQuery();
+    if (ctx.from?.id?.toString() === id) {
+      await ctx.api.deleteMessage(ctx.chat!.id, ctx.callbackQuery!.message!.message_id);
+    }
+});
+
+bot.catch((e) => {
+    console.error(`Error for `, e);
+  }
+);
 
 
 if(use_webhook) {
@@ -133,3 +181,8 @@ await bot.api.setMyCommands([
     { command: "language", description: "Set language" },
 ]);
  
+export function deleteMessage(chat_id: number, message_id: number, time: number = 5) {
+    setTimeout(() => {
+      bot.api.deleteMessage(chat_id, message_id);
+    }, 1000 * time);
+  }
