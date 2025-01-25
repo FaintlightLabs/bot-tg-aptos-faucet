@@ -1,13 +1,13 @@
 start = Welcome to Aptos Testnet Faucet Bot!
 help =
-    Input /faucet <address> to get 0.1 testnet token. You can only call me once per hour!
+    Input /faucet <address> to get 0.5 testnet token. You can only call me once per hour!
 
     You can change my language using the /language command.
 
 faucet = 
     .too-frequent = You can only call me once per hour!
     .no-address = Please provide your address!
-    Input /faucet <address> to get 0.1 testnet token. You can only call me once per hour!
+    Input /faucet <address> to get 0.5 testnet token. You can only call me once per hour!
 
 language = 
     .specify-a-locale = Please specify a language abbreviation, e.g., { $locales }

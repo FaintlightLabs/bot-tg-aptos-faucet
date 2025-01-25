@@ -1,13 +1,13 @@
 start = Chào mừng đến với Bot Vòi Testnet Aptos!
 help =
-    Nhập /faucet <địa chỉ> để nhận 0.1 token testnet. Bạn chỉ có thể gọi tôi một lần mỗi giờ!
+    Nhập /faucet <địa chỉ> để nhận 0.5 token testnet. Bạn chỉ có thể gọi tôi một lần mỗi giờ!
 
     Bạn có thể thay đổi ngôn ngữ của tôi bằng cách sử dụng lệnh /language.
 
 faucet = 
     .too-frequent = Bạn chỉ có thể gọi tôi một lần mỗi giờ!
     .no-address = Vui lòng cung cấp địa chỉ của bạn!
-    Nhập /faucet <địa chỉ> để nhận 0.1 token testnet. Bạn chỉ có thể gọi tôi một lần mỗi giờ!
+    Nhập /faucet <địa chỉ> để nhận 0.5 token testnet. Bạn chỉ có thể gọi tôi một lần mỗi giờ!
 
 language = 
     .specify-a-locale = Vui lòng chỉ định một chữ viết tắt ngôn ngữ, ví dụ: { $locales }

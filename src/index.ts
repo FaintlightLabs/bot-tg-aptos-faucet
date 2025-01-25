@@ -70,7 +70,7 @@ bot.command('faucet', async ctx => {
 
 
 
-    // 调用 Aptos SDK 发送 0.1 个 testnet token
+    // 调用 Aptos SDK 发送 0.5 个 testnet token
 
     // 获得地址
 
@@ -86,7 +86,7 @@ bot.command('faucet', async ctx => {
         sender: faucetAccount.accountAddress,
         recipient: AccountAddress.from(address),
         coinType: APTOS_COIN,
-        amount: 10 * 1000 * 1000
+        amount: 50 * 1000 * 1000
     });
 
     let simulate_result: Array<UserTransactionResponse> | null = null;
