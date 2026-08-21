@@ -3,25 +3,31 @@ import Koa from 'koa';
 import "dotenv/config";
 import { Account, AccountAddress, Aptos, APTOS_COIN, AptosConfig, Ed25519PrivateKey, Network, UserTransactionResponse } from '@aptos-labs/ts-sdk';
 import { I18n, I18nFlavor } from '@grammyjs/i18n';
+import { getLastCall, setLastCall } from './db.js';
 
 
 const use_webhook = process.env.USE_WEBHOOK === 'true';
 
+if (!process.env.TG_BOT_API_KEY) {
+    throw new Error('TG_BOT_API_KEY is required');
+}
+if (!process.env.FAUCET_PRIVATE_KEY) {
+    throw new Error('FAUCET_PRIVATE_KEY is required');
+}
+if (use_webhook && !process.env.WEBHOOK_URL) {
+    throw new Error('WEBHOOK_URL is required when USE_WEBHOOK=true');
+}
 
 interface SessionData {
     __language_code?: string;
 }
-interface UserCallData {
-    lastCall: Date;
-}
 type MyContext = Context & SessionFlavor<SessionData> & I18nFlavor;
-const db: { [key: number]: UserCallData } = {};
 const aptos = new Aptos(new AptosConfig({ network: Network.TESTNET}));
 
-const faucetAccount = Account.fromPrivateKey({privateKey: new Ed25519PrivateKey(process.env.FAUCET_PRIVATE_KEY!)});
+const faucetAccount = Account.fromPrivateKey({privateKey: new Ed25519PrivateKey(process.env.FAUCET_PRIVATE_KEY)});
 
 
-const bot = new Bot<MyContext>(process.env.TG_BOT_API_KEY!);
+const bot = new Bot<MyContext>(process.env.TG_BOT_API_KEY);
 
 const i18n = new I18n<MyContext>({
     defaultLocale: "en",
@@ -61,8 +67,8 @@ bot.command('faucet', async ctx => {
     let is_private = ctx.chat?.type === 'private';
 
     // 判断上一次这个用户调用的时间是否超过 1 小时
-    const lastCall = db[ctx.from!.id];
-    if (lastCall && new Date().getTime() - lastCall.lastCall.getTime() < 3600000) {
+    const lastCall = getLastCall(ctx.from!.id);
+    if (lastCall && new Date().getTime() - lastCall.getTime() < 3600000) {
         let message = await ctx.reply(ctx.t("faucet.too-frequent"),{message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
         deleteMessage(message.chat.id, message.message_id);
         return 
@@ -99,8 +105,9 @@ bot.command('faucet', async ctx => {
 
     }
 
-    if(simulate_result![0].vm_status !== 'Executed successfully') {
-        let message = await ctx.reply(`Transaction simulation failed!\n${simulate_result![0].vm_status}`,{message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
+    if(!simulate_result || simulate_result[0].vm_status !== 'Executed successfully') {
+        const vmStatus = simulate_result ? simulate_result[0].vm_status : 'Simulation request failed';
+        let message = await ctx.reply(`Transaction simulation failed!\n${vmStatus}`,{message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
         deleteMessage(message.chat.id, message.message_id);
         return  
     }
@@ -118,7 +125,7 @@ bot.command('faucet', async ctx => {
     await aptos.waitForTransaction({transactionHash: submit_result.hash});
 
     // 更新用户调用时间
-    db[ctx.from!.id] = { lastCall: new Date() };
+    setLastCall(ctx.from!.id, new Date());
 
     // 制作一个按钮，可以由某个人删除信息
     const keyboard = new InlineKeyboard().text(
@@ -166,13 +173,16 @@ bot.catch((e) => {
 
 
 if(use_webhook) {
+    // 启动时丢弃在离线期间堆积的旧 update，只处理开机之后的消息
+    await bot.api.deleteWebhook({ drop_pending_updates: true });
     const app = new Koa();
     app.use(webhookCallback(bot, 'koa'));
     app.listen(8000);
     await bot.api.setWebhook( process.env.WEBHOOK_URL! );
     
 }else{
-    await bot.start();
+    // 启动时丢弃在离线期间堆积的旧 update，只处理开机之后的消息
+    await bot.start({ drop_pending_updates: true });
 }
 
 await bot.api.setMyCommands([
@@ -183,7 +193,11 @@ await bot.api.setMyCommands([
 ]);
  
 export function deleteMessage(chat_id: number, message_id: number, time: number = 5) {
-    setTimeout(() => {
-      bot.api.deleteMessage(chat_id, message_id);
+    setTimeout(async () => {
+      try {
+        await bot.api.deleteMessage(chat_id, message_id);
+      } catch (e) {
+        console.error('Failed to delete message:', e);
+      }
     }, 1000 * time);
   }
