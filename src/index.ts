@@ -43,6 +43,17 @@ bot.use(
     }),
 );
 bot.use(i18n);
+
+const LOCALE_NAMES: Record<string, string> = {
+    en: "English",
+    vi: "Tiếng Việt",
+    zh: "中文",
+};
+
+function formatLocales(locales: string[]): string {
+    return locales.map((locale) => `${LOCALE_NAMES[locale] ?? locale} (${locale})`).join(", ");
+}
+
 // 介绍大家我这是一个 Aptos Testnet 水龙头机器人
 bot.command('start', ctx => { 
     if(ctx.chat?.type != 'private') {
@@ -50,13 +61,14 @@ bot.command('start', ctx => {
     }
     return ctx.reply( ctx.t("start"))
 });
-// 输入 /faucet <address> 可以获得 0.1 个 testnet token 每个小时只能调用一次
+// 输入 /faucet <address> 可以获得 0.5 个 testnet token 每个小时只能调用一次
 bot.command('help', async ctx => {
     let is_private = ctx.chat?.type === 'private';
+    const helpText = ctx.t("help", { locales: formatLocales(i18n.locales) });
     if(is_private) {
-        return await ctx.reply(ctx.t("help"));
+        return await ctx.reply(helpText);
     }else{
-        let message = await ctx.reply(ctx.t("help"), {message_thread_id: ctx.message?.message_thread_id});
+        let message = await ctx.reply(helpText, {message_thread_id: ctx.message?.message_thread_id});
         return deleteMessage(message.chat.id, message.message_id);
     }
 
@@ -133,29 +145,31 @@ bot.command('faucet', async ctx => {
         `delete_${ctx.from?.id}`
     );
 
-    await ctx.reply(`Transaction submitted!\n\nYou get 0.1 APT in testnet\n\nTxn Hash: ${submit_result.hash}\n\nExplorer: https://explorer.aptoslabs.com/txn/${submit_result.hash}?network=testnet`, { reply_markup: is_private ? undefined : keyboard, message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
+    await ctx.reply(`Transaction submitted!\n\nYou get 0.5 APT in testnet\n\nTxn Hash: ${submit_result.hash}\n\nExplorer: https://explorer.aptoslabs.com/txn/${submit_result.hash}?network=testnet`, { reply_markup: is_private ? undefined : keyboard, message_thread_id: is_thread ? ctx.message?.message_thread_id : undefined});
     await bot.api.setMessageReaction( ctx.chat!.id, ctx.message!.message_id , [{type: "emoji", emoji:'👌'}],);
 });
 bot.command("language", async (ctx) => {
     if(ctx.chat?.type != 'private') {
         return 
     }
+    const localesText = formatLocales(i18n.locales);
     if (ctx.match === "") {
-      return await ctx.reply(ctx.t("language.specify-a-locale", {locales: i18n.locales.join(", ")}));
+      return await ctx.reply(ctx.t("language.specify-a-locale", {locales: localesText}));
     }
   
     // `i18n.locale` 包含所有已注册的地区。
     if (!i18n.locales.includes(ctx.match)) {
-      return await ctx.reply(ctx.t("language.invalid-locale", {locales: i18n.locales.join(", ")}));
+      return await ctx.reply(ctx.t("language.invalid-locale", {locales: localesText}));
     }
   
+    const localeName = LOCALE_NAMES[ctx.match] ?? ctx.match;
     // `ctx.i18n.getLocale` 返回当前使用的地区。
     if ((await ctx.i18n.getLocale()) === ctx.match) {
-      return await ctx.reply(ctx.t("language.already-set", {locale: ctx.match}));
+      return await ctx.reply(ctx.t("language.already-set", {localeName}));
     }
   
     await ctx.i18n.setLocale(ctx.match);
-    await ctx.reply(ctx.t("language.language-set", {locale: ctx.match}));
+    await ctx.reply(ctx.t("language.language-set", {localeName}));
   });
 bot.callbackQuery(/^delete_/, async (ctx) => {
     if (!ctx.callbackQuery?.data) return;
@@ -188,7 +202,7 @@ if(use_webhook) {
 await bot.api.setMyCommands([
     { command: "start", description: "Start the bot" },
     { command: "help", description: "Show help text" },
-    { command: "faucet", description: "Get 0.1 testnet APT token" },
+    { command: "faucet", description: "Get 0.5 testnet APT token" },
     { command: "language", description: "Set language" },
 ]);
  

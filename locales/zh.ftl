@@ -1,18 +1,31 @@
-start = 欢迎使用 Aptos 测试网水龙头机器人！
+start =
+    欢迎！我是 Aptos 测试网水龙头机器人。
+
+    我可以每小时向你发送 0.5 个测试网 APT。
+
+    命令：
+    /faucet <地址> — 领取测试网代币
+    /language — 切换语言
+    /help — 显示帮助
+
 help =
+    使用方法：
+
+    /faucet <地址>
+    领取 0.5 个测试网 APT。每小时只能领取一次。
+
+    /language
+    切换机器人语言。可用语言：{ $locales }
+
+    需要帮助？发送 /start。
+
+faucet =
+    .too-frequent = 请稍等一下！每小时只能领取一次测试网 APT，稍后再试。
+    .no-address = 请提供你的 Aptos 地址。例如：/faucet 0x1234...
     输入 /faucet <地址> 以获取 0.5 测试网代币。你每小时只能调用一次！
 
-    你可以使用 /language 命令更改我的语言。
-
-faucet = 
-    .too-frequent = 你每小时只能调用一次！
-    .no-address = 请提供你的地址！
-    输入 /faucet <地址> 以获取 0.5 测试网代币。你每小时只能调用一次！
-
-language = 
-    .specify-a-locale = 请选择指定的语言缩写，例如 ,{ $locales }
-    .invalid-locale = 指定的语言缩写无效
-    可以选择 例如 ,{ $locales }
-    .already-set = 当前已经设置为 { $locale }
-    .language-set = 已经成功设置为 { $locale }
-    
+language =
+    .specify-a-locale = 请选择语言：{ $locales }
+    .invalid-locale = 抱歉，该语言不可用。请从以下中选择：{ $locales }
+    .already-set = 当前语言已设置为 { $localeName }
+    .language-set = 语言已切换为 { $localeName }
