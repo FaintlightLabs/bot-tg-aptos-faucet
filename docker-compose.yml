@@ -1,0 +1,9 @@
+services:
+  bot:
+    build: .
+    container_name: bot-tg-aptos-faucet
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
