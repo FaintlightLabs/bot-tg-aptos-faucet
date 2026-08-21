@@ -1,17 +1,34 @@
-start = Welcome to Aptos Testnet Faucet Bot!
+start =
+    Welcome! I'm the Aptos Testnet Faucet Bot.
+
+    I can send you 0.5 testnet APT once per hour.
+
+    Commands:
+    /faucet <address> — request testnet tokens
+    /language — change language
+    /help — show this help
+
 help =
+    Here's how to use me:
+
+    /faucet <address>
+    Request 0.5 testnet APT. You can do this once per hour.
+
+    /language
+    Change the bot language. You can use:
+    { $languageCommands }
+
+    Need help? Send /start.
+
+faucet =
+    .too-frequent = Please wait a bit! You can request testnet APT once per hour. Try again later.
+    .no-address = Please include your Aptos address. Example: /faucet 0x1234...
     Input /faucet <address> to get 0.5 testnet token. You can only call me once per hour!
 
-    You can change my language using the /language command.
-
-faucet = 
-    .too-frequent = You can only call me once per hour!
-    .no-address = Please provide your address!
-    Input /faucet <address> to get 0.5 testnet token. You can only call me once per hour!
-
-language = 
-    .specify-a-locale = Please specify a language abbreviation, e.g., { $locales }
-    .invalid-locale = The specified language abbreviation is invalid
-    You can choose e.g., { $locales }
-    .already-set = The current language is already set to { $locale }
-    .language-set = The language has been successfully set to { $locale }
+language =
+    .specify-a-locale = Please choose a language:
+    { $languageCommands }
+    .invalid-locale = Sorry, that language is not available. Please choose from:
+    { $languageCommands }
+    .already-set = Language is already set to { $localeName }
+    .language-set = Language changed to { $localeName }
