@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import type { StorageAdapter } from 'grammy';
 import { mkdirSync } from 'fs';
 import path from 'path';
 
@@ -11,6 +12,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS user_calls (
     user_id INTEGER PRIMARY KEY,
     last_call TEXT NOT NULL
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
   )
 `);
 db.pragma('journal_mode = WAL');
@@ -27,4 +34,27 @@ export function setLastCall(userId: number, date: Date): void {
     userId,
     date.toISOString(),
   );
+}
+
+interface SessionRow {
+  value: string;
+}
+
+export function sqliteSessionStorage<T>(): StorageAdapter<T> {
+  const readStmt = db.prepare('SELECT value FROM sessions WHERE key = ?');
+  const writeStmt = db.prepare('INSERT OR REPLACE INTO sessions (key, value) VALUES (?, ?)');
+  const deleteStmt = db.prepare('DELETE FROM sessions WHERE key = ?');
+
+  return {
+    read: async (key: string) => {
+      const row = readStmt.get(key) as SessionRow | undefined;
+      return row ? (JSON.parse(row.value) as T) : undefined;
+    },
+    write: async (key: string, value: T) => {
+      writeStmt.run(key, JSON.stringify(value));
+    },
+    delete: async (key: string) => {
+      deleteStmt.run(key);
+    },
+  };
 }
