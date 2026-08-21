@@ -52,7 +52,8 @@ const LOCALE_NAMES: Record<string, string> = {
 };
 
 function formatLanguageCommands(locales: string[]): string {
-    return locales.map((locale) => `/language ${locale}`).join("\n");
+    const commands = locales.map((locale) => `/language ${locale}`).join("\n");
+    return "```\n" + commands + "\n```";
 }
 
 // 介绍大家我这是一个 Aptos Testnet 水龙头机器人
@@ -67,9 +68,9 @@ bot.command('help', async ctx => {
     let is_private = ctx.chat?.type === 'private';
     const helpText = ctx.t("help", { languageCommands: formatLanguageCommands(i18n.locales) });
     if(is_private) {
-        return await ctx.reply(helpText);
+        return await ctx.reply(helpText, { parse_mode: "Markdown" });
     }else{
-        let message = await ctx.reply(helpText, {message_thread_id: ctx.message?.message_thread_id});
+        let message = await ctx.reply(helpText, { parse_mode: "Markdown", message_thread_id: ctx.message?.message_thread_id });
         return deleteMessage(message.chat.id, message.message_id);
     }
 
@@ -155,12 +156,12 @@ bot.command("language", async (ctx) => {
     }
     const languageCommands = formatLanguageCommands(i18n.locales);
     if (ctx.match === "") {
-      return await ctx.reply(ctx.t("language.specify-a-locale", {languageCommands}));
+      return await ctx.reply(ctx.t("language.specify-a-locale", {languageCommands}), { parse_mode: "Markdown" });
     }
   
     // `i18n.locale` 包含所有已注册的地区。
     if (!i18n.locales.includes(ctx.match)) {
-      return await ctx.reply(ctx.t("language.invalid-locale", {languageCommands}));
+      return await ctx.reply(ctx.t("language.invalid-locale", {languageCommands}), { parse_mode: "Markdown" });
     }
   
     const localeName = LOCALE_NAMES[ctx.match] ?? ctx.match;
