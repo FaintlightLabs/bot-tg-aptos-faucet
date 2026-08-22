@@ -15,6 +15,7 @@ use teloxide::types::{
     InlineKeyboardButton, InlineKeyboardMarkup, MessageId, ParseMode, ReactionType,
 };
 use teloxide::utils::command::BotCommands;
+use teloxide::utils::markdown;
 
 pub type BotState = Arc<State>;
 
@@ -114,10 +115,12 @@ async fn help(bot: Bot, msg: Message, state: BotState) -> Result<(), teloxide::R
     let user_id = msg.from.as_ref().map(|u| u.id.0).unwrap_or(0);
     let locale = get_locale(&state, user_id);
     let language_commands = format_language_commands(&state.i18n.locales());
-    let text = state.i18n.translate(
+    let text = translate_with_md_arg(
+        &state.i18n,
         &locale,
         "help",
-        t_args!("languageCommands" => language_commands),
+        "languageCommands",
+        &language_commands,
     );
     let is_private = is_private(&msg);
     let thread_id = msg.thread_id;
@@ -271,10 +274,12 @@ async fn language(
 
     let trimmed = args.trim();
     if trimmed.is_empty() {
-        let text = state.i18n.translate(
+        let text = translate_with_md_arg(
+            &state.i18n,
             &locale,
             "language.specify-a-locale",
-            t_args!("languageCommands" => language_commands),
+            "languageCommands",
+            &language_commands,
         );
         bot.send_message(msg.chat.id, text)
             .parse_mode(ParseMode::MarkdownV2)
@@ -283,10 +288,12 @@ async fn language(
     }
 
     if !locales.contains(&trimmed.to_string()) {
-        let text = state.i18n.translate(
+        let text = translate_with_md_arg(
+            &state.i18n,
             &locale,
             "language.invalid-locale",
-            t_args!("languageCommands" => language_commands),
+            "languageCommands",
+            &language_commands,
         );
         bot.send_message(msg.chat.id, text)
             .parse_mode(ParseMode::MarkdownV2)
@@ -350,11 +357,23 @@ fn get_locale(state: &State, user_id: u64) -> String {
 }
 
 fn format_language_commands(locales: &[String]) -> String {
-    let commands: Vec<String> = locales
+    locales
         .iter()
-        .map(|l| format!("`/language {}`", l))
-        .collect();
-    commands.join("\n")
+        .map(|l| markdown::code_inline(&format!("/language {}", l)))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn translate_with_md_arg(
+    i18n: &I18n,
+    locale: &str,
+    key: &str,
+    arg_name: &str,
+    md_arg: &str,
+) -> String {
+    const PLACEHOLDER: &str = "\u{0}MD_ARG\u{0}";
+    let text = i18n.translate(locale, key, t_args!(arg_name => PLACEHOLDER));
+    markdown::escape(&text).replace(PLACEHOLDER, md_arg)
 }
 
 fn schedule_delete(bot: &Bot, chat_id: ChatId, message_id: MessageId) {
