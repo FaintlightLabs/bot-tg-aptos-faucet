@@ -4,14 +4,14 @@ start =
     我可以每小时向你发送 0.5 个测试网 APT。
 
     命令：
-    /faucet <地址> — 领取测试网代币
+    /faucet \<地址\> — 领取测试网代币
     /language — 切换语言
     /help — 显示帮助
 
 help =
     使用方法：
 
-    /faucet <地址>
+    /faucet \<地址\>
     领取 0.5 个测试网 APT。每小时只能领取一次。
 
     /language
@@ -23,7 +23,7 @@ help =
 faucet =
     .too-frequent = 请稍等一下！每小时只能领取一次测试网 APT，稍后再试。
     .no-address = 请提供你的 Aptos 地址。例如：/faucet 0x1234...
-    输入 /faucet <地址> 以获取 0.5 测试网代币。你每小时只能调用一次！
+    输入 /faucet \<地址\> 以获取 0.5 测试网代币。你每小时只能调用一次！
 
 language =
     .specify-a-locale = 请选择语言：
