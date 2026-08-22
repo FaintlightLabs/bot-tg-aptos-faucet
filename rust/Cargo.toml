@@ -1,0 +1,22 @@
+[package]
+name = "bot-tg-aptos-faucet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.53.1", features = ["full"] }
+teloxide = { version = "0.17.0", features = ["macros", "webhooks-axum"] }
+aptos-sdk = { version = "0.6.0", default-features = false, features = ["ed25519"] }
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+dotenvy = "0.15.7"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+chrono = "0.4.45"
+axum = "0.8.9"
+fluent = "0.17.0"
+fluent-bundle = "0.16.0"
+unic-langid = { version = "0.9.6", features = ["macros"] }
+intl-memoizer = "0.5.3"
+anyhow = "1.0.104"
+log = "0.4.34"
+pretty_env_logger = "0.5.0"

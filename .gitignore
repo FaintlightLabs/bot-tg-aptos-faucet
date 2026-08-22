@@ -1,5 +1,12 @@
-.aptos
-dist
-node_modules
-.env
-data
+# TypeScript implementation
+typescript/node_modules
+typescript/dist
+typescript/data
+typescript/.env
+typescript/.aptos
+
+# Rust implementation
+rust/target
+rust/data
+rust/.env
+rust/Cargo.lock
