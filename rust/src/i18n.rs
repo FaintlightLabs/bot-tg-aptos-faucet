@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use fluent::{FluentArgs, FluentResource, FluentValue};
 use fluent::concurrent::FluentBundle;
+use fluent::{FluentArgs, FluentResource, FluentValue};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -29,7 +29,9 @@ impl I18n {
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .context("invalid locale filename")?;
-            let langid: LanguageIdentifier = stem.parse().with_context(|| format!("invalid locale {stem}"))?;
+            let langid: LanguageIdentifier = stem
+                .parse()
+                .with_context(|| format!("invalid locale {stem}"))?;
 
             let source = fs::read_to_string(&path)
                 .with_context(|| format!("cannot read locale file {:?}", path))?;

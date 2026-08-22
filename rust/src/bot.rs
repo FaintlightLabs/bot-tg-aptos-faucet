@@ -3,10 +3,7 @@ use crate::i18n::I18n;
 use crate::t_args;
 use anyhow::Result;
 use aptos_sdk::{
-    account::Ed25519Account,
-    transaction::EntryFunction,
-    types::AccountAddress,
-    Aptos,
+    Aptos, account::Ed25519Account, transaction::EntryFunction, types::AccountAddress,
 };
 use chrono::Utc;
 use std::collections::HashMap;
@@ -14,7 +11,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use teloxide::dispatching::{UpdateFilterExt, UpdateHandler};
 use teloxide::prelude::*;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardMarkup, MessageId, ParseMode, ReactionType};
+use teloxide::types::{
+    InlineKeyboardButton, InlineKeyboardMarkup, MessageId, ParseMode, ReactionType,
+};
 use teloxide::utils::command::BotCommands;
 
 pub type BotState = Arc<State>;
@@ -82,7 +81,11 @@ fn parse_command(text: &str) -> Option<(Command, String)> {
     Some((cmd, args.to_string()))
 }
 
-async fn message_handler(bot: Bot, msg: Message, state: BotState) -> Result<(), teloxide::RequestError> {
+async fn message_handler(
+    bot: Bot,
+    msg: Message,
+    state: BotState,
+) -> Result<(), teloxide::RequestError> {
     let text = msg.text().unwrap_or("");
     let (cmd, args) = match parse_command(text) {
         Some(c) => c,
@@ -111,9 +114,11 @@ async fn help(bot: Bot, msg: Message, state: BotState) -> Result<(), teloxide::R
     let user_id = msg.from.as_ref().map(|u| u.id.0).unwrap_or(0);
     let locale = get_locale(&state, user_id);
     let language_commands = format_language_commands(&state.i18n.locales());
-    let text = state
-        .i18n
-        .translate(&locale, "help", t_args!("languageCommands" => language_commands));
+    let text = state.i18n.translate(
+        &locale,
+        "help",
+        t_args!("languageCommands" => language_commands),
+    );
     let is_private = is_private(&msg);
     let thread_id = msg.thread_id;
 
@@ -221,10 +226,8 @@ async fn faucet(
     let keyboard = if is_private {
         None
     } else {
-        let button = InlineKeyboardButton::callback(
-            "Delete this message",
-            format!("delete_{}", user_id),
-        );
+        let button =
+            InlineKeyboardButton::callback("Delete this message", format!("delete_{}", user_id));
         Some(InlineKeyboardMarkup::new(vec![vec![button]]))
     };
 
@@ -242,7 +245,9 @@ async fn faucet(
     reply.await?;
 
     bot.set_message_reaction(msg.chat.id, msg.id)
-        .reaction(vec![ReactionType::Emoji { emoji: "👌".to_string() }])
+        .reaction(vec![ReactionType::Emoji {
+            emoji: "👌".to_string(),
+        }])
         .send()
         .await?;
 
@@ -266,9 +271,11 @@ async fn language(
 
     let trimmed = args.trim();
     if trimmed.is_empty() {
-        let text = state
-            .i18n
-            .translate(&locale, "language.specify-a-locale", t_args!("languageCommands" => language_commands));
+        let text = state.i18n.translate(
+            &locale,
+            "language.specify-a-locale",
+            t_args!("languageCommands" => language_commands),
+        );
         bot.send_message(msg.chat.id, text)
             .parse_mode(ParseMode::MarkdownV2)
             .await?;
@@ -276,42 +283,55 @@ async fn language(
     }
 
     if !locales.contains(&trimmed.to_string()) {
-        let text = state
-            .i18n
-            .translate(&locale, "language.invalid-locale", t_args!("languageCommands" => language_commands));
+        let text = state.i18n.translate(
+            &locale,
+            "language.invalid-locale",
+            t_args!("languageCommands" => language_commands),
+        );
         bot.send_message(msg.chat.id, text)
             .parse_mode(ParseMode::MarkdownV2)
             .await?;
         return Ok(());
     }
 
-    let locale_names: HashMap<&str, &str> = [("en", "English"), ("vi", "Tiếng Việt"), ("zh", "中文")]
-        .into_iter()
-        .collect();
+    let locale_names: HashMap<&str, &str> =
+        [("en", "English"), ("vi", "Tiếng Việt"), ("zh", "中文")]
+            .into_iter()
+            .collect();
     let locale_name = locale_names.get(trimmed).copied().unwrap_or(trimmed);
 
     if locale == trimmed {
-        let text = state
-            .i18n
-            .translate(&locale, "language.already-set", t_args!("localeName" => locale_name));
+        let text = state.i18n.translate(
+            &locale,
+            "language.already-set",
+            t_args!("localeName" => locale_name),
+        );
         bot.send_message(msg.chat.id, text).await?;
         return Ok(());
     }
 
     state.db.set_locale(user_id, trimmed).ok();
-    let text = state
-        .i18n
-        .translate(trimmed, "language.language-set", t_args!("localeName" => locale_name));
+    let text = state.i18n.translate(
+        trimmed,
+        "language.language-set",
+        t_args!("localeName" => locale_name),
+    );
     bot.send_message(msg.chat.id, text).await?;
     Ok(())
 }
 
-async fn callback_handler(bot: Bot, q: CallbackQuery, _state: BotState) -> Result<(), teloxide::RequestError> {
+async fn callback_handler(
+    bot: Bot,
+    q: CallbackQuery,
+    _state: BotState,
+) -> Result<(), teloxide::RequestError> {
     let data = q.data.as_deref().unwrap_or("");
     if let Some(payload) = data.strip_prefix("delete_") {
         if let Ok(expected_id) = payload.parse::<u64>() {
             if q.from.id.0 == expected_id {
-                if let Some((chat_id, message_id)) = q.message.as_ref().map(|m| (m.chat().id, m.id())) {
+                if let Some((chat_id, message_id)) =
+                    q.message.as_ref().map(|m| (m.chat().id, m.id()))
+                {
                     bot.delete_message(chat_id, message_id).await.ok();
                 }
             }

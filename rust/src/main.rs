@@ -3,8 +3,8 @@ mod db;
 mod i18n;
 
 use anyhow::{Context, Result};
-use aptos_sdk::{account::Ed25519Account, Aptos};
-use bot::{schema, BotState, Command, State};
+use aptos_sdk::{Aptos, account::Ed25519Account};
+use bot::{BotState, Command, State, schema};
 use db::Db;
 use i18n::I18n;
 use std::sync::Arc;
@@ -53,7 +53,9 @@ async fn main() -> Result<()> {
         .default_handler(|upd| async move {
             log::warn!("Unhandled update: {:?}", upd);
         })
-        .error_handler(LoggingErrorHandler::with_custom_text("An error has occurred in the dispatcher"))
+        .error_handler(LoggingErrorHandler::with_custom_text(
+            "An error has occurred in the dispatcher",
+        ))
         .enable_ctrlc_handler()
         .build();
 
@@ -68,7 +70,10 @@ async fn main() -> Result<()> {
             .await
             .context("failed to set up webhook listener")?;
         dispatcher
-            .dispatch_with_listener(listener, LoggingErrorHandler::with_custom_text("Webhook listener error"))
+            .dispatch_with_listener(
+                listener,
+                LoggingErrorHandler::with_custom_text("Webhook listener error"),
+            )
             .await;
     } else {
         bot.delete_webhook()
