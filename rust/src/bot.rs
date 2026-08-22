@@ -350,8 +350,11 @@ fn get_locale(state: &State, user_id: u64) -> String {
 }
 
 fn format_language_commands(locales: &[String]) -> String {
-    let commands: Vec<String> = locales.iter().map(|l| format!("/language {}", l)).collect();
-    format!("```\n{}\n```", commands.join("\n"))
+    let commands: Vec<String> = locales
+        .iter()
+        .map(|l| format!("`/language {}`", l))
+        .collect();
+    commands.join("\n")
 }
 
 fn schedule_delete(bot: &Bot, chat_id: ChatId, message_id: MessageId) {
