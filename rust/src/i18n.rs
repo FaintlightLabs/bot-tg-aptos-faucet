@@ -91,14 +91,13 @@ impl I18n {
         args: Option<&FluentArgs>,
     ) -> Option<String> {
         // Fluent attributes are accessed as "message.attr".
-        if let Some((message_id, attr_name)) = key.rsplit_once('.') {
-            if let Some(message) = bundle.get_message(message_id) {
-                if let Some(attr) = message.get_attribute(attr_name) {
-                    let mut errors = Vec::new();
-                    let value = bundle.format_pattern(attr.value(), args, &mut errors);
-                    return Some(value.into_owned());
-                }
-            }
+        if let Some((message_id, attr_name)) = key.rsplit_once('.')
+            && let Some(message) = bundle.get_message(message_id)
+            && let Some(attr) = message.get_attribute(attr_name)
+        {
+            let mut errors = Vec::new();
+            let value = bundle.format_pattern(attr.value(), args, &mut errors);
+            return Some(value.into_owned());
         }
 
         let message = bundle.get_message(key)?;

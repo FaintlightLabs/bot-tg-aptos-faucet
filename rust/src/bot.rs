@@ -143,13 +143,13 @@ async fn faucet(
 
     // Rate limit: 1 hour
     let now = Utc::now();
-    if let Some(last_call) = state.db.get_last_call(user_id).unwrap_or(None) {
-        if (now - last_call).num_milliseconds() < 3_600_000 {
-            let text = state.i18n.translate(&locale, "faucet.too-frequent", None);
-            let sent = build_send!(bot, msg.chat.id, text, thread_id).await?;
-            schedule_delete(&bot, sent.chat.id, sent.id);
-            return Ok(());
-        }
+    if let Some(last_call) = state.db.get_last_call(user_id).unwrap_or(None)
+        && (now - last_call).num_milliseconds() < 3_600_000
+    {
+        let text = state.i18n.translate(&locale, "faucet.too-frequent", None);
+        let sent = build_send!(bot, msg.chat.id, text, thread_id).await?;
+        schedule_delete(&bot, sent.chat.id, sent.id);
+        return Ok(());
     }
 
     let address_str = args.split_whitespace().next().unwrap_or("");
@@ -326,16 +326,12 @@ async fn callback_handler(
     _state: BotState,
 ) -> Result<(), teloxide::RequestError> {
     let data = q.data.as_deref().unwrap_or("");
-    if let Some(payload) = data.strip_prefix("delete_") {
-        if let Ok(expected_id) = payload.parse::<u64>() {
-            if q.from.id.0 == expected_id {
-                if let Some((chat_id, message_id)) =
-                    q.message.as_ref().map(|m| (m.chat().id, m.id()))
-                {
-                    bot.delete_message(chat_id, message_id).await.ok();
-                }
-            }
-        }
+    if let Some(payload) = data.strip_prefix("delete_")
+        && let Ok(expected_id) = payload.parse::<u64>()
+        && q.from.id.0 == expected_id
+        && let Some((chat_id, message_id)) = q.message.as_ref().map(|m| (m.chat().id, m.id()))
+    {
+        bot.delete_message(chat_id, message_id).await.ok();
     }
     bot.answer_callback_query(q.id).await?;
     Ok(())
