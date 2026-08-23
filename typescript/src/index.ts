@@ -52,8 +52,7 @@ const LOCALE_NAMES: Record<string, string> = {
 };
 
 function formatLanguageCommands(locales: string[]): string {
-    const commands = locales.map((locale) => `/language ${locale}`).join("\n");
-    return "```\n" + commands + "\n```";
+    return locales.map((locale) => `\`/language ${locale}\``).join("\n");
 }
 
 // 介绍大家我这是一个 Aptos Testnet 水龙头机器人
