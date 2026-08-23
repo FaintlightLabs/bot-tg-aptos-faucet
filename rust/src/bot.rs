@@ -371,9 +371,44 @@ fn translate_with_md_arg(
     arg_name: &str,
     md_arg: &str,
 ) -> String {
-    const PLACEHOLDER: &str = "\u{0}MD_ARG\u{0}";
-    let text = i18n.translate(locale, key, t_args!(arg_name => PLACEHOLDER));
-    markdown::escape(&text).replace(PLACEHOLDER, md_arg)
+    const PLACEHOLDER: &str = "MD_ARG";
+    const MARKER: &str = "\u{0}";
+    let placeholder = format!("{MARKER}{PLACEHOLDER}{MARKER}");
+    let text = i18n.translate(locale, key, t_args!(arg_name => placeholder));
+
+    // Fluent wraps argument values in BiDi isolate characters (U+2066..U+2069).
+    // Locate the placeholder (including surrounding isolates/marker bytes) and
+    // split the text around it so only the literal text is escaped.
+    const BIDI_ISOLATES: [char; 4] = ['\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}'];
+
+    if let Some(pos) = text.find(PLACEHOLDER) {
+        let mut start = pos;
+        let mut end = pos + PLACEHOLDER.len();
+
+        while start > 0 {
+            let c = text[..start].chars().next_back().unwrap();
+            if c == '\u{0}' || BIDI_ISOLATES.contains(&c) {
+                start -= c.len_utf8();
+            } else {
+                break;
+            }
+        }
+
+        while end < text.len() {
+            let c = text[end..].chars().next().unwrap();
+            if c == '\u{0}' || BIDI_ISOLATES.contains(&c) {
+                end += c.len_utf8();
+            } else {
+                break;
+            }
+        }
+
+        let before = markdown::escape(&text[..start]);
+        let after = markdown::escape(&text[end..]);
+        format!("{before}{md_arg}{after}")
+    } else {
+        markdown::escape(&text)
+    }
 }
 
 fn schedule_delete(bot: &Bot, chat_id: ChatId, message_id: MessageId) {
@@ -382,4 +417,21 @@ fn schedule_delete(bot: &Bot, chat_id: ChatId, message_id: MessageId) {
         tokio::time::sleep(Duration::from_secs(5)).await;
         let _ = bot.delete_message(chat_id, message_id).await;
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_translate_with_md_arg_replaces_placeholder() {
+        let i18n = I18n::new("locales").unwrap();
+        let md_arg = markdown::code_inline("/language en");
+        let text = translate_with_md_arg(&i18n, "en", "help", "languageCommands", &md_arg);
+        assert!(
+            text.contains(&md_arg),
+            "expected inline code in help text: {text:?}"
+        );
+        assert!(!text.contains("MD_ARG"), "placeholder leaked: {text:?}");
+    }
 }
