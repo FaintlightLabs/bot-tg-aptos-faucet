@@ -22,11 +22,6 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
             asset_name: bot-tg-aptos-faucet-linux-x64
-          # Fully static musl build for maximum Linux compatibility.
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            asset_name: bot-tg-aptos-faucet-linux-musl-x64
-            install_musl: true
           - target: x86_64-apple-darwin
             os: macos-latest
             asset_name: bot-tg-aptos-faucet-macos-x64
@@ -43,10 +38,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install musl tools
-        if: matrix.install_musl
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
