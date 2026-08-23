@@ -21,16 +21,20 @@ jobs:
           # compatibility (Debian 12, Ubuntu 22.04/24.04/26.04, etc.).
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-22.04
-            asset_name: bot-tg-aptos-faucet-linux-x64
+            asset_name: bot-tg-aptos-faucet-linux-x64.tar.gz
+            binary_name: bot-tg-aptos-faucet
           - target: x86_64-apple-darwin
             os: macos-latest
-            asset_name: bot-tg-aptos-faucet-macos-x64
+            asset_name: bot-tg-aptos-faucet-macos-x64.tar.gz
+            binary_name: bot-tg-aptos-faucet
           - target: aarch64-apple-darwin
             os: macos-latest
-            asset_name: bot-tg-aptos-faucet-macos-arm64
+            asset_name: bot-tg-aptos-faucet-macos-arm64.tar.gz
+            binary_name: bot-tg-aptos-faucet
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            asset_name: bot-tg-aptos-faucet-windows-x64.exe
+            asset_name: bot-tg-aptos-faucet-windows-x64.zip
+            binary_name: bot-tg-aptos-faucet.exe
 
     defaults:
       run:
@@ -58,15 +62,27 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package binary
+      - name: Package binary (Unix)
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           mkdir -p dist
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/${{ matrix.target }}/release/bot-tg-aptos-faucet.exe "dist/${{ matrix.asset_name }}"
-          else
-            cp target/${{ matrix.target }}/release/bot-tg-aptos-faucet "dist/${{ matrix.asset_name }}"
-          fi
+          mkdir -p package/bot-tg-aptos-faucet
+          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} package/bot-tg-aptos-faucet/
+          cp -r locales package/bot-tg-aptos-faucet/
+          cp .env.example package/bot-tg-aptos-faucet/
+          tar -czf dist/${{ matrix.asset_name }} -C package bot-tg-aptos-faucet
+
+      - name: Package binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          New-Item -ItemType Directory -Force -Path package/bot-tg-aptos-faucet
+          Copy-Item target/${{ matrix.target }}/release/${{ matrix.binary_name }} package/bot-tg-aptos-faucet/
+          Copy-Item -Recurse locales package/bot-tg-aptos-faucet/
+          Copy-Item .env.example package/bot-tg-aptos-faucet/
+          Compress-Archive -Path package/bot-tg-aptos-faucet -DestinationPath dist/${{ matrix.asset_name }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
